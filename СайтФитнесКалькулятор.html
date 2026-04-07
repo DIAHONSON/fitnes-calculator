@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Фитнес Калькулятор | ИМТ, Калории, % Жира</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+    }
+
+    body {
+      transition: background 0.25s, color 0.2s;
+      padding: 2rem 1rem;
+    }
+    body.dark {
+      background: #0a0f0e;
+      background-image: radial-gradient(circle at 15% 30%, rgba(30, 50, 40, 0.25) 0%, #0a0f0e 80%);
+      color: #eef5f2;
+    }
+    body.light {
+      background: #f5f7f5;
+      background-image: none;
+      color: #1a2e28;
+    }
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #c0ffc0, #4caf7a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .hero p {
+      display: none;
+    }
+    .theme-switch {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #2a3a32;
+      border-radius: 60px;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      font-size: 1.4rem;
+      border: 1px solid #4caf7a;
+      transition: 0.2s;
+      line-height: 1;
+    }
+    body.light .theme-switch {
+      background: #e8ece8;
+      border-color: #3b8b6b;
+    }
+    .theme-switch:hover {
+      transform: scale(1.02);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.8rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: rgba(18, 24, 22, 0.85);
+      backdrop-filter: blur(2px);
+      border-radius: 2rem;
+      border: 1px solid #2a3a32;
+      padding: 1.5rem 1.8rem;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+    body.light .card {
+      background: #ffffff;
+      border: 1px solid #dce6e1;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+      color: #1a2e28;
+    }
+    .card:hover {
+      border-color: #4caf7a;
+      transform: translateY(-4px);
+    }
+    .card h2 {
+      font-size: 1.7rem;
+      font-weight: 600;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-left: 4px solid #6fda9c;
+      padding-left: 1rem;
+    }
+    body.light .card h2 {
+      color: #1a2e28;
+    }
+    .input-group {
+      margin-bottom: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .input-group label {
+      font-weight: 500;
+      color: #c6e2d4;
+    }
+    body.light .input-group label {
+      color: #2c4a3e;
+    }
+    input, select {
+      background: #111715;
+      border: 1px solid #2f423a;
+      padding: 0.8rem 1rem;
+      border-radius: 1.2rem;
+      color: #f0fcf6;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236fda9c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1rem;
+    }
+    body.light select {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%233b8b6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+    }
+    select::-ms-expand {
+      display: none;
+    }
+    body.light input, body.light select {
+      background-color: #ffffff;
+      border: 1px solid #cad5cf;
+      color: #1a2e28;
+    }
+    input:focus, select:focus {
+      border-color: #6fda9c;
+      box-shadow: 0 0 0 2px rgba(79, 195, 119, 0.3);
+    }
+    .result-block {
+      margin-top: 1.5rem;
+      background: #0c1210;
+      border-radius: 1.5rem;
+      padding: 1.2rem;
+      border-left: 3px solid #6fda9c;
+    }
+    body.light .result-block {
+      background: #ffffff;
+      border-left: 3px solid #3b8b6b;
+      color: #1a2e28;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .result-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #b0ffcf;
+      line-height: 1.2;
+    }
+    body.light .result-value {
+      color: #2a7f5a;
+    }
+    .result-desc {
+      color: #a7bfb4;
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+    }
+    body.light .result-desc {
+      color: #5a7568;
+    }
+    .flex-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .macro {
+      background: #101b17;
+      border-radius: 1.2rem;
+      padding: 0.7rem;
+      text-align: center;
+      flex: 1;
+      min-width: 70px;
+    }
+    body.light .macro {
+      background: #f0f4f2;
+      color: #1a2e28;
+    }
+    .macro span:first-child {
+      font-weight: 600;
+      color: #b4f0cf;
+    }
+    body.light .macro span:first-child {
+      color: #2a7f5a;
+    }
+    hr {
+      border-color: #2c3e35;
+      margin: 1rem 0;
+    }
+    body.light hr {
+      border-color: #e0e8e3;
+    }
+    .fat-info {
+      font-size: 0.85rem;
+      color: #bed9cd;
+    }
+    body.light .fat-info {
+      color: #5a7568;
+    }
+    .warning-text {
+      color: #f5bc70;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 0.75rem;
+      color: #587a6b;
+    }
+    body.light footer {
+      color: #8aa396;
+    }
+    .weight-input-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .weight-input-wrapper input {
+      flex: 1;
+    }
+    .weight-btn {
+      width: 44px;
+      background: #2a3a32;
+      border: none;
+      border-radius: 1.2rem;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: #6fda9c;
+      transition: 0.2s;
+      height: 48px;
+    }
+    body.light .weight-btn {
+      background: #e0e8e3;
+      color: #2a7f5a;
+    }
+    .weight-btn:hover {
+      background: #4caf7a;
+      color: white;
+    }
+    .navy-btn {
+      background: #4caf7a;
+      margin-top: 0.5rem;
+      border: none;
+      padding: 0.6rem;
+      border-radius: 1.2rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.2s;
+      color: white;
+      font-weight: bold;
+    }
+    .navy-btn:hover {
+      background: #6fda9c;
+      transform: scale(0.98);
+    }
+    body.light .navy-btn {
+      background: #3b8b6b;
+    }
+    .water-select {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.3rem;
+    }
+    .water-select button {
+      flex: 1;
+      background: #2a3a32;
+      border: 1px solid #4caf7a;
+      padding: 0.5rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      color: #eef5f2;
+    }
+    body.light .water-select button {
+      background: #e0e8e3;
+      color: #1a2e28;
+    }
+    .water-select button.active {
+      background: #4caf7a;
+      color: white;
+    }
+    .train-recommend {
+      background: #1a2a24;
+      border-radius: 1rem;
+      padding: 0.8rem;
+      margin-top: 0.5rem;
+      border-left: 3px solid #6fda9c;
+    }
+    body.light .train-recommend {
+      background: #eef5f0;
+    }
+    .chart-container {
+      margin-top: 1rem;
+      max-height: 250px;
+    }
+    canvas {
+      max-height: 220px;
+      width: 100%;
+    }
+    .percentile-bar {
+      background: #2a3a32;
+      border-radius: 1rem;
+      height: 20px;
+      width: 100%;
+      margin: 0.8rem 0;
+      overflow: hidden;
+      position: relative;
+    }
+    body.light .percentile-bar {
+      background: #e0e8e3;
+    }
+    .percentile-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4caf7a, #6fda9c);
+      border-radius: 1rem;
+      transition: width 0.3s;
+    }
+    .percentile-marker {
+      position: absolute;
+      top: 0;
+      width: 3px;
+      height: 100%;
+      background: #f5bc70;
+      box-shadow: 0 0 0 2px #0a0f0e;
+    }
+    body.light .percentile-marker {
+      box-shadow: 0 0 0 2px #ffffff;
+    }
+    .percentile-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      margin-top: 0.2rem;
+    }
+    
+    /* Улучшенный блок "Что означают цифры?" */
+    .info-block {
+      margin-top: 1.5rem;
+      background: #0c1210;
+      border-radius: 1.5rem;
+      padding: 1.2rem;
+      border-left: 3px solid #6fda9c;
+    }
+    body.light .info-block {
+      background: #f0f4f2;
+      border-left: 3px solid #3b8b6b;
+    }
+    .info-block-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #b0ffcf;
+    }
+    body.light .info-block-title {
+      color: #2a7f5a;
+    }
+    .info-item {
+      margin: 0.6rem 0;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .info-icon {
+      font-size: 1rem;
+      min-width: 24px;
+    }
+    .info-text strong {
+      color: #6fda9c;
+    }
+    body.light .info-text strong {
+      color: #2a7f5a;
+    }
+    .info-text {
+      font-size: 0.9rem;
+    }
+
+    /* Модальное окно */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #1a2a24;
+      border-radius: 2rem;
+      padding: 2rem;
+      max-width: 450px;
+      width: 90%;
+      border: 1px solid #4caf7a;
+    }
+    body.light .modal-content {
+      background: #ffffff;
+      border: 1px solid #3b8b6b;
+      color: #1a2e28;
+    }
+    .modal-content h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .modal-content .close-btn {
+      float: right;
+      font-size: 1.5rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #6fda9c;
+    }
+    body.light .modal-content .close-btn {
+      color: #3b8b6b;
+    }
+    .modal-result {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #0c1210;
+      border-radius: 1rem;
+      text-align: center;
+    }
+    body.light .modal-result {
+      background: #f0f4f2;
+    }
+    @media (max-width: 700px) {
+      .card { padding: 1.2rem; }
+      .result-value { font-size: 1.5rem; }
+      .info-item { font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body class="dark">
+<div class="container">
+  <div class="hero">
+    <div class="theme-switch" id="themeToggle" title="Сменить тему">🌙</div>
+    <h1>⚡ Фитнес Калькулятор</h1>
+  </div>
+
+  <div class="grid-2">
+    <!-- ЛЕВАЯ КАРТОЧКА: все поля ввода -->
+    <div class="card">
+      <h2>📝 Введите данные</h2>
+      
+      <div class="input-group">
+        <label>Пол</label>
+        <select id="gender">
+          <option value="male">Мужской</option>
+          <option value="female">Женский</option>
+        </select>
+      </div>
+      
+      <div class="flex-row" style="gap: 0.8rem;">
+        <div class="input-group" style="flex:1"><label>Возраст (лет)</label><input type="number" id="age" value="30" step="1"></div>
+        <div class="input-group" style="flex:1"><label>Вес (кг)</label><input type="number" id="weight" value="80" step="1"></div>
+        <div class="input-group" style="flex:1"><label>Рост (см)</label><input type="number" id="height" value="170" step="1"></div>
+      </div>
+
+      <hr>
+
+      <div class="input-group">
+        <label>Уровень активности</label>
+        <select id="activity">
+          <option value="1.2">🪑 Сидячий, мало движений</option>
+          <option value="1.375">🚶 Лёгкая активность (1-3 дня/нед)</option>
+          <option value="1.55" selected>🏋️ Умеренная (3-5 тренировок)</option>
+          <option value="1.725">💪 Высокая (6-7 раз)</option>
+          <option value="1.9">⚡ Экстремальная (физ. работа + спорт)</option>
+        </select>
+      </div>
+
+      <hr>
+
+      <h3 style="font-size: 1.2rem; margin: 0.5rem 0 1rem 0;">📅 Цель по датам</h3>
+      <div class="flex-row" style="gap: 1rem;">
+        <div class="input-group" style="flex: 1;">
+          <label>Изменить вес на (кг)</label>
+          <div class="weight-input-wrapper">
+            <button class="weight-btn" id="minusBtn" type="button">−</button>
+            <input type="text" id="targetChange" value="-5" placeholder="например: -5 или 5" inputmode="numeric">
+            <button class="weight-btn" id="plusBtn" type="button">+</button>
+          </div>
+        </div>
+        <div class="input-group" style="flex: 1;">
+          <label>за (дней)</label>
+          <input type="number" id="targetDays" value="60" step="1">
+        </div>
+      </div>
+      <div class="fat-info" style="margin-top: -0.5rem;">
+        📌 Примеры: <strong>-5</strong> (похудеть), <strong>3</strong> или <strong>+3</strong> (набрать)
+      </div>
+
+      <!-- Улучшенный блок "Что означают цифры?" -->
+      <div class="info-block">
+        <div class="info-block-title">
+          <span>📘</span> Что означают цифры?
+        </div>
+        <div class="info-item">
+          <span class="info-icon">📏</span>
+          <span class="info-text"><strong>ИМТ 18.5–24.9</strong> — нормальный вес</span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">🧬</span>
+          <span class="info-text"><strong>% жира: муж 10-20%, жен 18-28%</strong> — здоровый диапазон</span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">🥩</span>
+          <span class="info-text"><strong>Белки: 1.6–2.2 г/кг веса</strong> — для роста мышц</span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">🧈</span>
+          <span class="info-text"><strong>Жиры: 20-30% от калорий</strong> — для гормонов и энергии</span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">🔥</span>
+          <span class="info-text"><strong>TDEE</strong> — суточный расход энергии с учётом активности</span>
+        </div>
+        <div class="info-item">
+          <span class="info-icon">🌍</span>
+          <span class="info-text"><strong>Процентиль ВОЗ</strong> — место вашего ИМТ среди сверстников</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПРАВАЯ КАРТОЧКА: все результаты -->
+    <div class="card">
+      <h2>📊 Результаты</h2>
+      
+      <div class="result-block">
+        <div>🔹 <strong>ИМТ</strong> — <span id="bmiValue" class="result-value" style="font-size: 1.6rem;">--</span> <span>кг/м²</span></div>
+        <div id="bmiInterpret" class="result-desc">Введите данные</div>
+      </div>
+
+      <div class="result-block">
+        <div>🧬 <strong>Ориентировочный процент жира</strong><br>
+        <span id="fatPercent" class="result-value" style="font-size: 1.6rem;">--</span> <span id="fatLevelDesc"></span></div>
+        <div id="fatDetails" class="fat-info">Универсальная формула (ИМТ + возраст + пол)</div>
+        <button class="navy-btn" id="openNavyBtn">⚓ Точный расчёт US Navy (по обхватам)</button>
+      </div>
+
+      <div class="result-block">
+        <div>🍽️ <strong>Ваша норма поддержания (TDEE)</strong><br><span id="tdeeValue" class="result-value" style="font-size: 1.6rem;">----</span> <span>ккал/день</span></div>
+        <div style="margin-top: 12px;"><strong>Рекомендуемый КБЖУ</strong></div>
+        <div class="flex-row" style="margin-top: 6px;">
+          <div class="macro"><span>🥩 Белки</span><br><span id="protein" class="result-value" style="font-size:1.4rem;">--</span> г</div>
+          <div class="macro"><span>🧈 Жиры</span><br><span id="fat" class="result-value" style="font-size:1.4rem;">--</span> г</div>
+          <div class="macro"><span>🍚 Углеводы</span><br><span id="carbs" class="result-value" style="font-size:1.4rem;">--</span> г</div>
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div><strong>🎯 Рекомендуемая калорийность для цели</strong><br>
+        <span id="recommendedKcal" class="result-value" style="font-size: 1.6rem;">--</span> <span>ккал в день</span></div>
+        <div id="goalAdvice" class="result-desc">Введите желаемое изменение веса и срок</div>
+        <div id="safetyWarning" class="warning-text"></div>
+        <div class="fat-info" style="margin-top: 8px;">
+          💡 1 кг жира ≈ 7700 ккал. Например: −5 кг = похудеть, 3 кг = набрать.
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div>💧 <strong>Норма воды в день</strong><br>
+        <span id="waterValue" class="result-value" style="font-size: 1.6rem;">--</span> <span>мл (около <span id="waterGlasses">--</span> стаканов)</span></div>
+        <div class="water-select">
+          <button id="waterNormal" class="active">☀️ Обычная погода</button>
+          <button id="waterHot">🔥 Жарко / тренировка</button>
+        </div>
+        <div class="fat-info" style="margin-top: 8px;">
+          💡 Формула: вес × 30 мл + корректировка на активность.
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div>📈 <strong>Прогноз изменения веса</strong></div>
+        <div class="chart-container">
+          <canvas id="weightChart" width="400" height="200"></canvas>
+        </div>
+        <div class="fat-info" style="margin-top: 8px;">
+          📊 График показывает плановое изменение веса от текущего до целевого.
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div>🌍 <strong>Сравнение ИМТ с нормой ВОЗ</strong></div>
+        <div id="percentileText" class="result-desc" style="margin-bottom: 0.5rem;">Введите данные</div>
+        <div class="percentile-bar">
+          <div class="percentile-fill" id="percentileFill"></div>
+          <div class="percentile-marker" id="percentileMarker" style="left: 0%;"></div>
+        </div>
+        <div class="percentile-labels">
+          <span>▼ Низкий</span>
+          <span>Норма</span>
+          <span>Избыток</span>
+          <span>Ожирение ▼</span>
+        </div>
+        <div id="percentileDetails" class="fat-info" style="margin-top: 8px;">
+          📊 Процентиль показывает, какой процент людей вашего возраста и пола имеют ИМТ ниже вашего.
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div>🏋️ <strong>Рекомендации по тренировкам</strong></div>
+        <div id="trainRecommend" class="train-recommend">
+          Введите данные для получения рекомендаций
+        </div>
+        <div class="fat-info" style="margin-top: 8px;">
+          💡 Рекомендации основаны на вашем проценте жира и цели.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>⚡ Фитнес-калькулятор — ИМТ, % жира, калории, КБЖУ, вода, тренировки, график, сравнение с нормой ВОЗ</footer>
+</div>
+
+<!-- Модальное окно для US Navy -->
+<div id="navyModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" id="closeModalBtn">&times;</button>
+    <h3>⚓ Точный расчёт % жира по US Navy</h3>
+    <div class="input-group">
+      <label>Ваш пол</label>
+      <select id="navyGender">
+        <option value="male">Мужской</option>
+        <option value="female">Женский</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Рост (см)</label>
+      <input type="number" id="navyHeight" placeholder="Рост" step="0.5">
+    </div>
+    <div class="input-group">
+      <label>Обхват талии (см)</label>
+      <input type="number" id="navyWaist" placeholder="Талия" step="0.5">
+    </div>
+    <div class="input-group">
+      <label>Обхват шеи (см)</label>
+      <input type="number" id="navyNeck" placeholder="Шея" step="0.5">
+    </div>
+    <div class="input-group" id="navyHipGroup">
+      <label>Обхват бёдер (см) — для женщин</label>
+      <input type="number" id="navyHip" placeholder="Бёдра" step="0.5">
+    </div>
+    <button class="navy-btn" id="calcNavyBtn" style="width:100%; margin-top:1rem;">Рассчитать</button>
+    <div id="navyResult" class="modal-result">
+      Введите данные для расчёта
+    </div>
+    <div class="fat-info" style="margin-top: 0.8rem;">
+      📐 Формула ВМС США (US Navy) — точнее для стройных и спортивных людей.
+    </div>
+  </div>
+</div>
+
+<script>
+  // ----- ОСНОВНЫЕ ФУНКЦИИ -----
+  
+  let waterMode = 'normal';
+  let weightChart = null;
+  
+  function calcUniversalBodyFat(gender, bmi, age) {
+    let genderFactor = (gender === 'male') ? 1 : 0;
+    let bodyFat = (1.20 * bmi) + (0.23 * age) - (10.8 * genderFactor) - 5.4;
+    if (bmi > 30) bodyFat = bodyFat + (bmi - 30) * 0.25;
+    if (bmi < 18.5) bodyFat = bodyFat - (18.5 - bmi) * 0.3;
+    if (gender === 'male') return Math.min(Math.max(bodyFat, 5), 45);
+    else return Math.min(Math.max(bodyFat, 12), 55);
+  }
+
+  function calcNavyBodyFat(gender, heightCm, waistCm, neckCm, hipCm) {
+    if (waistCm <= 0 || neckCm <= 0 || heightCm <= 0) return null;
+    if (gender === 'female' && hipCm <= 0) return null;
+    try {
+      if (gender === 'male') {
+        let waistNeck = waistCm - neckCm;
+        if (waistNeck < 0.5) waistNeck = 0.5;
+        let part1 = 86.010 * Math.log10(waistNeck);
+        let part2 = 70.041 * Math.log10(heightCm);
+        let bf = part1 - part2 + 36.76;
+        return Math.min(Math.max(bf, 4), 50);
+      } else {
+        let sum = waistCm + hipCm - neckCm;
+        if (sum < 1) sum = 50;
+        let bf = 163.205 * Math.log10(sum) - 97.684 * Math.log10(heightCm) - 78.387;
+        return Math.min(Math.max(bf, 10), 55);
+      }
+    } catch(e) {
+      return null;
+    }
+  }
+
+  function calcWaterIntake(weight, activity, mode) {
+    let water = weight * 30;
+    if (activity >= 1.55) water = water + 400;
+    if (activity >= 1.725) water = water + 300;
+    if (mode === 'hot') water = water + 700;
+    return Math.round(water);
+  }
+
+  function getTrainingRecommendation(bodyFat, gender, goalDirection) {
+    let isHighFat = false;
+    let isLowFat = false;
+    if (gender === 'male') {
+      if (bodyFat > 25) isHighFat = true;
+      if (bodyFat < 14) isLowFat = true;
+    } else {
+      if (bodyFat > 32) isHighFat = true;
+      if (bodyFat < 21) isLowFat = true;
+    }
+    
+    let wantLose = (goalDirection === 'lose');
+    let wantGain = (goalDirection === 'gain');
+    
+    if (isHighFat && wantLose) {
+      return "🔹 Приоритет: снижение жира.\n🏃 Рекомендации: кардио 3-5 раз в неделю (бег, велосипед, плавание) + силовые 2 раза в неделю для сохранения мышц.\n🍽️ Дефицит калорий 15-20% от нормы.";
+    } else if (isHighFat && !wantLose) {
+      return "🔹 У вас повышенный процент жира. Рекомендуется сначала снизить вес, а потом набирать массу.\n🏃 Начните с кардио-тренировок 3-4 раза в неделю и небольшого дефицита калорий.";
+    } else if (isLowFat && wantGain) {
+      return "🔹 У вас низкий процент жира — отличная база для набора мышечной массы.\n🏋️ Рекомендации: силовые тренировки 3-4 раза в неделю (базовые упражнения).\n🍽️ Профицит калорий 10-15%, акцент на белки (2-2.2 г/кг веса).";
+    } else if (isLowFat && wantLose) {
+      return "🔹 У вас низкий процент жира. Дальнейшее похудение может навредить здоровью.\n🏋️ Рекомендуется переключиться на набор мышечной массы или поддержание формы.";
+    } else if (!wantLose && !wantGain) {
+      return "🔹 Цель: поддержание формы.\n🏃 Комбинируйте кардио и силовые тренировки 3-4 раза в неделю.\n🍽️ Питайтесь по норме поддержания (TDEE).";
+    } else if (wantLose) {
+      return "🔹 Цель: снижение веса.\n🏃 Рекомендации: кардио 3-4 раза в неделю + силовые 2 раза.\n🍽️ Дефицит калорий 10-15% от нормы.";
+    } else if (wantGain) {
+      return "🔹 Цель: набор массы.\n🏋️ Рекомендации: силовые тренировки 3-4 раза в неделю (база).\n🍽️ Профицит калорий 10-15%, белки 1.8-2.2 г/кг веса.";
+    }
+    return "🔹 Сбалансированные тренировки: 3-4 раза в неделю, комбинируя кардио и силовые.";
+  }
+
+  function getWHOPercentile(bmi, age, gender) {
+    let medianBMI = 22.5;
+    let stdDev = 3.5;
+    if (age > 65) { medianBMI = 24.5; stdDev = 3.8; }
+    else if (age > 50) { medianBMI = 24; stdDev = 3.6; }
+    else if (age < 25) { medianBMI = 21.5; stdDev = 3.2; }
+    if (gender === 'female') medianBMI = medianBMI + 0.5;
+    let zScore = (bmi - medianBMI) / stdDev;
+    let percentile = 0.5 * (1 + Math.erf(zScore / Math.sqrt(2)));
+    percentile = Math.min(Math.max(percentile * 100, 0.1), 99.9);
+    return percentile;
+  }
+
+  Math.erf = function(x) {
+    const sign = (x >= 0) ? 1 : -1;
+    x = Math.abs(x);
+    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+    const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    const t = 1 / (1 + p * x);
+    const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+  };
+
+  function getPercentileDescription(percentile, bmi) {
+    if (percentile < 5) return "⚠️ Очень низкий ИМТ (ниже 95% сверстников). Рекомендуется консультация врача.";
+    if (percentile < 15) return "📉 Ниже среднего. Вы стройнее 85% сверстников.";
+    if (percentile < 35) return "📊 Норма (ниже среднего). Ваш ИМТ ниже, чем у 65% людей вашего возраста.";
+    if (percentile < 65) return "✅ Идеальная норма! Ваш ИМТ в самом здоровом диапазоне.";
+    if (percentile < 85) return "📊 Норма (выше среднего). Ваш ИМТ выше, чем у 65% людей вашего возраста.";
+    if (percentile < 95) return "📈 Выше среднего. Рекомендуется обратить внимание на питание и активность.";
+    return "⚠️ Очень высокий ИМТ (выше 95% сверстников). Рекомендуется консультация врача.";
+  }
+
+  function getFatDescription(bf, gender) {
+    if (gender === 'male') {
+      if (bf < 6) return "Экстремально низкий (риск)";
+      if (bf < 14) return "Спортивное телосложение";
+      if (bf < 21) return "Здоровый / фитнес";
+      if (bf < 26) return "Выше среднего";
+      if (bf < 31) return "Высокий";
+      return "Очень высокий (ожирение)";
+    } else {
+      if (bf < 14) return "Экстремально низкий (риск)";
+      if (bf < 21) return "Спортивная форма";
+      if (bf < 29) return "Здоровый диапазон";
+      if (bf < 34) return "Выше среднего";
+      if (bf < 39) return "Высокий";
+      return "Очень высокий (ожирение)";
+    }
+  }
+
+  function calculateBMI(weightKg, heightCm) {
+    let heightM = heightCm / 100;
+    if (heightM <= 0) return 0;
+    return weightKg / (heightM * heightM);
+  }
+
+  function getInterpretBMI(bmi) {
+    if (bmi < 16) return "Выраженный дефицит массы";
+    if (bmi < 18.5) return "Недостаточный вес";
+    if (bmi < 25) return "✅ Нормальный вес";
+    if (bmi < 30) return "Избыточная масса (предожирение)";
+    if (bmi < 35) return "Ожирение I степени";
+    if (bmi < 40) return "Ожирение II степени";
+    return "Ожирение III степени";
+  }
+
+  function getBMR(weightKg, heightCm, age, gender) {
+    let h = heightCm;
+    let w = weightKg;
+    let a = age;
+    if (gender === 'male') return 10 * w + 6.25 * h - 5 * a + 5;
+    else return 10 * w + 6.25 * h - 5 * a - 161;
+  }
+
+  function parseWeightChange(value) {
+    if (typeof value !== 'string') value = String(value);
+    value = value.trim();
+    if (value === '') return 0;
+    let num = parseFloat(value);
+    if (isNaN(num)) return 0;
+    if (value.startsWith('-')) return Math.min(0, num);
+    else return Math.max(0, num);
+  }
+
+  function updateChart(currentWeight, targetChangeKg, days) {
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    const targetKg = Math.abs(targetChangeKg);
+    const direction = targetChangeKg < 0 ? 'lose' : 'gain';
+    let targetWeight = direction === 'lose' ? currentWeight - targetKg : currentWeight + targetKg;
+    
+    const points = Math.min(days, 30);
+    const step = Math.ceil(days / points);
+    const labels = [];
+    const weights = [];
+    
+    for (let i = 0; i <= days; i += step) {
+      if (i > days) i = days;
+      const progress = i / days;
+      let weight = direction === 'lose' ? currentWeight - (currentWeight - targetWeight) * progress : currentWeight + (targetWeight - currentWeight) * progress;
+      labels.push(`День ${i}`);
+      weights.push(weight.toFixed(1));
+      if (i === days) break;
+    }
+    if (labels[labels.length - 1] !== `День ${days}`) {
+      labels.push(`День ${days}`);
+      weights.push(targetWeight.toFixed(1));
+    }
+    if (weightChart) weightChart.destroy();
+    
+    const isDark = document.body.classList.contains('dark');
+    const lineColor = isDark ? '#6fda9c' : '#2a7f5a';
+    const gridColor = isDark ? '#2a3a32' : '#dce6e1';
+    const textColor = isDark ? '#eef5f2' : '#1a2e28';
+    
+    weightChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Вес (кг)', data: weights, borderColor: lineColor, backgroundColor: 'rgba(79, 195, 119, 0.1)', borderWidth: 3, fill: true, tension: 0.3, pointBackgroundColor: lineColor, pointBorderColor: isDark ? '#0a0f0e' : '#ffffff', pointRadius: 5, pointHoverRadius: 7 }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} кг` } } }, scales: { y: { title: { display: true, text: 'Вес (кг)', color: textColor }, grid: { color: gridColor }, ticks: { color: textColor } }, x: { title: { display: true, text: 'Дни', color: textColor }, grid: { color: gridColor }, ticks: { color: textColor, maxRotation: 45, minRotation: 45 } } } }
+    });
+  }
+
+  function updateAll() {
+    let gender = document.getElementById('gender').value;
+    let age = parseFloat(document.getElementById('age').value);
+    let weight = parseFloat(document.getElementById('weight').value);
+    let height = parseFloat(document.getElementById('height').value);
+    let activity = parseFloat(document.getElementById('activity').value);
+    let rawTarget = document.getElementById('targetChange').value;
+    let targetChangeNum = parseWeightChange(rawTarget);
+    let goalDirection = targetChangeNum < 0 ? 'lose' : (targetChangeNum > 0 ? 'gain' : 'maintain');
+    let days = parseFloat(document.getElementById('targetDays').value);
+    if (isNaN(days) || days <= 0) days = 1;
+    
+    let bmi = 0;
+    if (!isNaN(weight) && !isNaN(height) && weight > 0 && height > 0) {
+      bmi = calculateBMI(weight, height);
+      document.getElementById('bmiValue').innerHTML = bmi.toFixed(1);
+      document.getElementById('bmiInterpret').innerHTML = getInterpretBMI(bmi);
+    } else {
+      document.getElementById('bmiValue').innerHTML = "—";
+    }
+
+    let bodyFat = null;
+    if (!isNaN(weight) && !isNaN(height) && weight > 0 && height > 0 && !isNaN(age) && age > 0 && bmi > 0) {
+      bodyFat = calcUniversalBodyFat(gender, bmi, age);
+      let fatFixed = bodyFat.toFixed(1);
+      document.getElementById('fatPercent').innerHTML = fatFixed + "%";
+      document.getElementById('fatLevelDesc').innerHTML = getFatDescription(bodyFat, gender);
+    } else {
+      document.getElementById('fatPercent').innerHTML = "—";
+      document.getElementById('fatLevelDesc').innerHTML = "";
+    }
+
+    if (!isNaN(weight) && !isNaN(height) && !isNaN(age) && weight > 0 && height > 0 && age > 0) {
+      let bmr = getBMR(weight, height, age, gender);
+      let tdee = bmr * activity;
+      tdee = Math.round(tdee);
+      document.getElementById('tdeeValue').innerHTML = tdee;
+      
+      let proteinG = weight * 1.8;
+      let fatPercentOfKcal = 0.25;
+      let fatKcal = tdee * fatPercentOfKcal;
+      let fatG = fatKcal / 9;
+      let remainingKcal = tdee - (proteinG * 4) - (fatG * 9);
+      let carbG = remainingKcal / 4;
+      if (carbG < 30) {
+        let correction = (30 - carbG) * 4;
+        proteinG = Math.max(weight * 1.2, proteinG - correction/8);
+        carbG = 30;
+      }
+      proteinG = Math.round(proteinG);
+      let finalFatG = Math.round(fatG);
+      let finalCarbsG = Math.round(carbG);
+      document.getElementById('protein').innerHTML = proteinG;
+      document.getElementById('fat').innerHTML = finalFatG;
+      document.getElementById('carbs').innerHTML = finalCarbsG;
+      
+      let water = calcWaterIntake(weight, activity, waterMode);
+      document.getElementById('waterValue').innerHTML = water;
+      document.getElementById('waterGlasses').innerHTML = Math.round(water / 250);
+      
+      updateDateGoal(tdee);
+      
+      if (!isNaN(weight) && !isNaN(targetChangeNum) && days > 0 && targetChangeNum !== 0) {
+        updateChart(weight, targetChangeNum, days);
+      }
+      
+      if (bmi > 0 && !isNaN(age) && age >= 18) {
+        let percentile = getWHOPercentile(bmi, age, gender);
+        let percentileFixed = Math.round(percentile);
+        let percentileDesc = getPercentileDescription(percentileFixed, bmi);
+        document.getElementById('percentileText').innerHTML = `📊 Вы находитесь на <strong>${percentileFixed}‑м процентиле</strong>. ${percentileDesc}`;
+        let markerPos = Math.min(Math.max(percentileFixed, 0), 100);
+        document.getElementById('percentileMarker').style.left = markerPos + '%';
+        document.getElementById('percentileFill').style.width = markerPos + '%';
+        document.getElementById('percentileDetails').innerHTML = `📊 Процентиль показывает, какой процент людей вашего возраста (${age} лет) и пола имеют ИМТ ниже вашего. Источник: данные ВОЗ.`;
+      } else if (bmi > 0 && !isNaN(age) && age < 18) {
+        document.getElementById('percentileText').innerHTML = `🔹 Для лиц младше 18 лет нормы ИМТ оцениваются по специальным центильным таблицам (данные ВОЗ). Ваш ИМТ: ${bmi.toFixed(1)}`;
+        document.getElementById('percentileMarker').style.left = '50%';
+        document.getElementById('percentileFill').style.width = '50%';
+      } else {
+        document.getElementById('percentileText').innerHTML = "Введите корректные возраст, вес и рост для сравнения с нормой ВОЗ";
+      }
+      
+      if (bodyFat !== null && !isNaN(bodyFat)) {
+        let trainText = getTrainingRecommendation(bodyFat, gender, goalDirection);
+        document.getElementById('trainRecommend').innerHTML = trainText;
+      } else {
+        document.getElementById('trainRecommend').innerHTML = "Введите все данные для получения рекомендаций";
+      }
+    } else {
+      document.getElementById('tdeeValue').innerHTML = "—";
+      document.getElementById('protein').innerHTML = "--";
+      document.getElementById('fat').innerHTML = "--";
+      document.getElementById('carbs').innerHTML = "--";
+      document.getElementById('waterValue').innerHTML = "--";
+    }
+  }
+
+  function updateDateGoal(tdee) {
+    let rawValue = document.getElementById('targetChange').value;
+    let targetChangeNum = parseWeightChange(rawValue);
+    let days = parseFloat(document.getElementById('targetDays').value);
+    if (isNaN(days) || days <= 0) days = 1;
+    let direction = targetChangeNum < 0 ? 'lose' : 'gain';
+    let targetKg = Math.abs(targetChangeNum);
+    if (targetKg === 0 || days <= 0 || isNaN(tdee) || tdee <= 0) {
+      document.getElementById('recommendedKcal').innerHTML = "—";
+      document.getElementById('goalAdvice').innerHTML = "Введите желаемое изменение веса (например, -3 или 5) и срок";
+      document.getElementById('safetyWarning').innerHTML = "";
+      return;
+    }
+    const kcalPerKg = 7700;
+    let totalKcalNeeded = targetKg * kcalPerKg;
+    let dailyKcalAdjust = totalKcalNeeded / days;
+    let recommendedIntake = 0;
+    let adviceText = "";
+    let warningText = "";
+    if (direction === 'lose') {
+      recommendedIntake = tdee - dailyKcalAdjust;
+      if (recommendedIntake < 500) warningText = `⚠️ Невозможно похудеть на ${targetKg} кг за ${days} дней — потребуется есть ${Math.round(recommendedIntake)} ккал/день, что ниже физиологического минимума. Увеличьте срок или уменьшите цель.`;
+      adviceText = `Цель: похудеть на ${targetKg} кг за ${days} дней. Рекомендуемая калорийность: ${Math.round(recommendedIntake)} ккал в день.`;
+      document.getElementById('recommendedKcal').innerHTML = Math.round(recommendedIntake);
+    } else {
+      recommendedIntake = tdee + dailyKcalAdjust;
+      adviceText = `Цель: набрать ${targetKg} кг за ${days} дней. Рекомендуемая калорийность: ${Math.round(recommendedIntake)} ккал в день.`;
+      document.getElementById('recommendedKcal').innerHTML = Math.round(recommendedIntake);
+    }
+    document.getElementById('goalAdvice').innerHTML = adviceText;
+    document.getElementById('safetyWarning').innerHTML = warningText;
+  }
+
+  function setupNavyModal() {
+    const modal = document.getElementById('navyModal');
+    const openBtn = document.getElementById('openNavyBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const calcBtn = document.getElementById('calcNavyBtn');
+    const navyGender = document.getElementById('navyGender');
+    const navyHipGroup = document.getElementById('navyHipGroup');
+    function toggleNavyHip() {
+      if (navyGender.value === 'female') navyHipGroup.style.display = 'flex';
+      else navyHipGroup.style.display = 'none';
+    }
+    navyGender.addEventListener('change', toggleNavyHip);
+    toggleNavyHip();
+    openBtn.onclick = () => {
+      document.getElementById('navyHeight').value = document.getElementById('height').value;
+      document.getElementById('navyWaist').value = '';
+      document.getElementById('navyNeck').value = '';
+      document.getElementById('navyHip').value = '';
+      modal.style.display = 'flex';
+    };
+    closeBtn.onclick = () => { modal.style.display = 'none'; };
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    calcBtn.onclick = () => {
+      let gender = navyGender.value;
+      let height = parseFloat(document.getElementById('navyHeight').value);
+      let waist = parseFloat(document.getElementById('navyWaist').value);
+      let neck = parseFloat(document.getElementById('navyNeck').value);
+      let hip = parseFloat(document.getElementById('navyHip').value);
+      if (isNaN(height) || height <= 0) { document.getElementById('navyResult').innerHTML = '❌ Введите корректный рост'; return; }
+      if (isNaN(waist) || waist <= 0) { document.getElementById('navyResult').innerHTML = '❌ Введите обхват талии'; return; }
+      if (isNaN(neck) || neck <= 0) { document.getElementById('navyResult').innerHTML = '❌ Введите обхват шеи'; return; }
+      if (gender === 'female' && (isNaN(hip) || hip <= 0)) { document.getElementById('navyResult').innerHTML = '❌ Введите обхват бёдер'; return; }
+      let bf = calcNavyBodyFat(gender, height, waist, neck, hip);
+      if (bf === null || isNaN(bf)) document.getElementById('navyResult').innerHTML = '❌ Ошибка расчёта. Проверьте введённые данные.';
+      else document.getElementById('navyResult').innerHTML = `<strong>${bf.toFixed(1)}%</strong><br>${getFatDescription(bf, gender)}`;
+    };
+  }
+
+  function setupWaterButtons() {
+    const normalBtn = document.getElementById('waterNormal');
+    const hotBtn = document.getElementById('waterHot');
+    normalBtn.addEventListener('click', () => { waterMode = 'normal'; normalBtn.classList.add('active'); hotBtn.classList.remove('active'); updateAll(); });
+    hotBtn.addEventListener('click', () => { waterMode = 'hot'; hotBtn.classList.add('active'); normalBtn.classList.remove('active'); updateAll(); });
+  }
+
+  function setupWeightButtons() {
+    const minusBtn = document.getElementById('minusBtn');
+    const plusBtn = document.getElementById('plusBtn');
+    const weightInput = document.getElementById('targetChange');
+    minusBtn.addEventListener('click', () => { let current = parseWeightChange(weightInput.value); weightInput.value = current - 0.5; updateAll(); });
+    plusBtn.addEventListener('click', () => { let current = parseWeightChange(weightInput.value); weightInput.value = current + 0.5; updateAll(); });
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem('fitTheme');
+    const themeBtn = document.getElementById('themeToggle');
+    if (saved === 'light') { document.body.classList.remove('dark'); document.body.classList.add('light'); themeBtn.innerHTML = '☀️'; }
+    else { document.body.classList.remove('light'); document.body.classList.add('dark'); themeBtn.innerHTML = '🌙'; }
+    updateAll();
+  }
+  
+  function toggleTheme() {
+    const themeBtn = document.getElementById('themeToggle');
+    if (document.body.classList.contains('dark')) { document.body.classList.remove('dark'); document.body.classList.add('light'); localStorage.setItem('fitTheme', 'light'); themeBtn.innerHTML = '☀️'; }
+    else { document.body.classList.remove('light'); document.body.classList.add('dark'); localStorage.setItem('fitTheme', 'dark'); themeBtn.innerHTML = '🌙'; }
+    updateAll();
+  }
+
+  const allInputs = document.querySelectorAll('#age, #weight, #height, #activity, #gender, #targetChange, #targetDays');
+  allInputs.forEach(el => { el.addEventListener('input', updateAll); el.addEventListener('change', updateAll); });
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+  document.getElementById('targetChange').addEventListener('input', function(e) { this.value = this.value.replace(/[^0-9\-\.]/g, ''); updateAll(); });
+  
+  initTheme();
+  setupWeightButtons();
+  setupNavyModal();
+  setupWaterButtons();
+  updateAll();
+</script>
+</body>
+</html>
